@@ -1,12 +1,14 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("kotlin-kapt")
 }
 
 android {
     buildFeatures {
         viewBinding = true
+        compose = true
     }
     namespace = "com.example.agent"
     compileSdk = 35
@@ -46,6 +48,7 @@ kapt {
 }
 
 dependencies {
+    implementation(libs.compose.runtime.livedata)
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.0")
     implementation("androidx.activity:activity-ktx:1.8.0")
     implementation("androidx.room:room-ktx:2.6.1")
@@ -59,9 +62,22 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.room.runtime)
-    kapt(libs.room.compiler)
+    implementation(libs.compose.material3)
+    implementation(platform(libs.compose.bom))
 
+    kapt(libs.room.compiler)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.activity.compose)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.compose.runtime.livedata)
+    debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation("androidx.compose.material3:material3:1.2.1") // 或你项目适用的版本
+    implementation("androidx.compose.material3:material3-window-size-class:1.3.2")
 }
