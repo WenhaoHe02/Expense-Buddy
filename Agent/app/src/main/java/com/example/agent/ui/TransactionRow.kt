@@ -3,7 +3,6 @@ package com.example.agent.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -37,8 +36,8 @@ private fun PreviewTransactionRow() {
             tx = Transaction(
                 amount = 52f,
                 merchant = "Starbucks",
-                method  = "WeChat Pay",
-                time    = "2025-06-20 14:12",
+                method = "WeChat Pay",
+                time = "2025-06-20 14:12",
                 timeMillis = System.currentTimeMillis()
             )
         )

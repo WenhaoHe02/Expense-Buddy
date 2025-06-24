@@ -5,8 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
 import com.example.agent.data.db.AppDatabase
 import com.example.agent.model.Transaction
@@ -34,10 +32,10 @@ class AddTransactionActivity : ComponentActivity() {
                             val timeFmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
                             db.transactionDao().insert(
                                 Transaction(
-                                    amount   = amount,
+                                    amount = amount,
                                     merchant = merchant,
-                                    method   = method,
-                                    time     = timeFmt.format(Date(millis)),
+                                    method = method,
+                                    time = timeFmt.format(Date(millis)),
                                     timeMillis = millis
                                 )
                             )

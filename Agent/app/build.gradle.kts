@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.compose.material3)
     implementation(platform(libs.compose.bom))
+    implementation(libs.androidx.lifecycle.service)
 
     kapt(libs.room.compiler)
     implementation(platform(libs.compose.bom))
