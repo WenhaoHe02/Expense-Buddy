@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Agent</string>
+    <string name="floating_ball_desc">悬浮球</string>
+    <string name="menu_value">手动记账</string>
 </resources>

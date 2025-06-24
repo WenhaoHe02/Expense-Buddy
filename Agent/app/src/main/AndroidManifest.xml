@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -31,6 +31,11 @@
         <!-- 其他页面不需要 intent-filter -->
         <activity android:name=".ui.AddTransactionActivity" android:exported="false" />
         <activity android:name=".ui.TransactionListActivity" android:exported="false" />
+        <activity android:name=".ui.ManualEntryActivity" />
+        <service
+            android:name=".ui.FloatingWindowService"
+            android:exported="false"/>
+
 
     </application>
 

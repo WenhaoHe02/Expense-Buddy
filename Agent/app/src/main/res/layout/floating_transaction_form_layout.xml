@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/menu_background"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <EditText
+        android:id="@+id/et_amount"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="金额"
+        android:inputType="numberDecimal"/>
+
+    <EditText
+        android:id="@+id/et_description"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="描述"
+        android:inputType="text"
+        android:layout_marginTop="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="取消"
+            android:padding="6dp"/>
+
+        <TextView
+            android:id="@+id/btn_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存"
+            android:padding="6dp"
+            android:layout_marginStart="16dp"/>
+    </LinearLayout>
+</LinearLayout>
