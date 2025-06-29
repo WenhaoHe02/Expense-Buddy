@@ -47,7 +47,7 @@ class Det(private val ortEnv: OrtEnvironment, assetManager: AssetManager, modelN
                 val outWidth: Int = tensorInfo.shape[3].toInt()
                 //-----Data preparation-----
                 val predData = outputData.toFloatArray()
-                val cbufData = outputData.map { (it * 255).toInt().toUByte() }.toUByteArray()
+                val cbufData = outputData.map { (it * 255).toInt().coerceIn(0, 255).toByte() }.toByteArray()
 
                 val predMat = Mat(outHeight, outWidth, CvType.CV_32F)
                 predMat.put(0, 0, predData)

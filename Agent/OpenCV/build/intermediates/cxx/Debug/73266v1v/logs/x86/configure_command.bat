@@ -1,0 +1,19 @@
+@echo off
+"C:\\Users\\HWH\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\cmake.exe" ^
+  "-HE:\\Expense-Buddy\\Agent\\OpenCV\\libcxx_helper" ^
+  "-DCMAKE_SYSTEM_NAME=Android" ^
+  "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" ^
+  "-DCMAKE_SYSTEM_VERSION=17" ^
+  "-DANDROID_PLATFORM=android-17" ^
+  "-DANDROID_ABI=x86" ^
+  "-DCMAKE_ANDROID_ARCH_ABI=x86" ^
+  "-DANDROID_NDK=C:\\Users\\HWH\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973" ^
+  "-DCMAKE_ANDROID_NDK=C:\\Users\\HWH\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973" ^
+  "-DCMAKE_TOOLCHAIN_FILE=C:\\Users\\HWH\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973\\build\\cmake\\android.toolchain.cmake" ^
+  "-DCMAKE_MAKE_PROGRAM=C:\\Users\\HWH\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe" ^
+  "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=E:\\Expense-Buddy\\Agent\\OpenCV\\build\\intermediates\\cxx\\Debug\\73266v1v\\obj\\x86" ^
+  "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=E:\\Expense-Buddy\\Agent\\OpenCV\\build\\intermediates\\cxx\\Debug\\73266v1v\\obj\\x86" ^
+  "-DCMAKE_BUILD_TYPE=Debug" ^
+  "-BE:\\Expense-Buddy\\Agent\\OpenCV\\.cxx\\Debug\\73266v1v\\x86" ^
+  -GNinja ^
+  "-DANDROID_STL=c++_shared"
