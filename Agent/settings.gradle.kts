@@ -31,4 +31,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Agent"
-include(":app")
+include(":app", ":OcrLibrary")
+

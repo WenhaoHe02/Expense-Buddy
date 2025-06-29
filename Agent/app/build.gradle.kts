@@ -48,6 +48,8 @@ kapt {
 }
 
 dependencies {
+    implementation(project(":OcrLibrary"))
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.15.1")
     implementation(libs.compose.runtime.livedata)
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.0")
     implementation("androidx.activity:activity-ktx:1.8.0")
