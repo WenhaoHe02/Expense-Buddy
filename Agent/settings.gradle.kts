@@ -31,5 +31,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Agent"
-include(":app", ":OcrLibrary")
+include(":app", ":OcrLibrary", "OpenCV")
 
