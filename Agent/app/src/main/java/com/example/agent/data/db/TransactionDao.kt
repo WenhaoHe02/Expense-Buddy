@@ -3,7 +3,7 @@ package com.example.agent.data.db
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.agent.model.Transaction
+import com.example.agent.model.Transaction.Transaction
 
 @Dao
 interface TransactionDao {

@@ -1,4 +1,4 @@
-package com.example.agent.ui
+package com.example.agent.ui.TransactionList
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -15,7 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.agent.model.Transaction
+import com.example.agent.model.Transaction.Transaction
 import com.example.agent.viewmodel.GroupMode
 import com.example.agent.viewmodel.TransactionViewModel
 

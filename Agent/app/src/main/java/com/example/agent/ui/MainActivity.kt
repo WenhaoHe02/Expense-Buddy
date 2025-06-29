@@ -11,6 +11,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.net.toUri
+import com.example.agent.ui.AddTransaction.AddTransactionActivity
+import com.example.agent.ui.FloatingWindow.FloatingWindowService
+import com.example.agent.ui.TransactionList.TransactionListActivity
 import com.example.agent.util.PermissionUtils
 
 class MainActivity : ComponentActivity() {

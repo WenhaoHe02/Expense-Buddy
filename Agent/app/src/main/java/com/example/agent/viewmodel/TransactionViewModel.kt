@@ -2,7 +2,7 @@ package com.example.agent.viewmodel
 
 import androidx.lifecycle.*
 import com.example.agent.data.db.AppDatabase
-import com.example.agent.model.Transaction
+import com.example.agent.model.Transaction.Transaction
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

@@ -29,11 +29,11 @@
         </activity>
 
         <!-- 其他页面不需要 intent-filter -->
-        <activity android:name=".ui.AddTransactionActivity" android:exported="false" />
-        <activity android:name=".ui.TransactionListActivity" android:exported="false" />
+        <activity android:name=".ui.AddTransaction.AddTransactionActivity" android:exported="false" />
+        <activity android:name=".ui.TransactionList.TransactionListActivity" android:exported="false" />
         <activity android:name=".ui.ManualEntryActivity" />
         <service
-            android:name=".ui.FloatingWindowService"
+            android:name=".ui.FloatingWindow.FloatingWindowService"
             android:exported="false"/>
 
 

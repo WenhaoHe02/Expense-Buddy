@@ -1,4 +1,4 @@
-package com.example.agent.model
+package com.example.agent.model.Transaction
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

@@ -1,5 +1,5 @@
-package com.example.agent.ui
-import com.example.agent.R
+package com.example.agent.ui.FloatingWindow
+
 import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
@@ -10,24 +10,28 @@ import android.os.IBinder
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.PopupWindow
+import androidx.core.graphics.drawable.toDrawable
+import com.example.agent.R
 import com.example.agent.data.db.AppDatabase
-import com.example.agent.databinding.FloatingTransactionFormLayoutBinding
 import com.example.agent.databinding.FloatingMenuLayoutBinding
-import com.example.agent.model.Transaction
+import com.example.agent.databinding.FloatingTransactionFormLayoutBinding
+import com.example.agent.model.Transaction.Transaction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
-import androidx.core.graphics.drawable.toDrawable
+import java.util.Date
+import java.util.Locale
+import kotlin.math.abs
 
 class FloatingWindowService : Service() {
 
     private lateinit var windowManager: WindowManager
-    private lateinit var ballView: android.view.View
+    private lateinit var ballView: View
     private lateinit var params: WindowManager.LayoutParams
 
     private var menuPopup: PopupWindow? = null
@@ -36,7 +40,7 @@ class FloatingWindowService : Service() {
     private val touchSlop by lazy { ViewConfiguration.get(this).scaledTouchSlop }
     private var isClick = false
 
-    private val db by lazy { AppDatabase.getInstance(this) }
+    private val db by lazy { AppDatabase.Companion.getInstance(this) }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate() {
@@ -83,7 +87,7 @@ class FloatingWindowService : Service() {
                 MotionEvent.ACTION_MOVE -> {
                     val dx = ev.rawX.toInt() - downX
                     val dy = ev.rawY.toInt() - downY
-                    if (isClick && (kotlin.math.abs(dx) > touchSlop || kotlin.math.abs(dy) > touchSlop)) {
+                    if (isClick && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                         isClick = false
                     }
                     if (!isClick) {
@@ -159,13 +163,15 @@ class FloatingWindowService : Service() {
             CoroutineScope(Dispatchers.IO).launch {
                 val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
                 val now = Date()
-                db.transactionDao().insert(Transaction(
-                    amount = amt,
-                    merchant = desc,
-                    method = "手动",
-                    time = fmt.format(now),
-                    timeMillis = now.time
-                ))
+                db.transactionDao().insert(
+                    Transaction(
+                        amount = amt,
+                        merchant = desc,
+                        method = "手动",
+                        time = fmt.format(now),
+                        timeMillis = now.time
+                    )
+                )
             }
             formPopup?.dismiss()
         }

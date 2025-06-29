@@ -1,4 +1,4 @@
-package com.example.agent.ui
+package com.example.agent.ui.TransactionList
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,13 +8,12 @@ import androidx.compose.material3.MaterialTheme
 import com.example.agent.data.db.AppDatabase
 import com.example.agent.viewmodel.TransactionViewModel
 import com.example.agent.viewmodel.TransactionViewModelFactory
-import androidx.compose.runtime.getValue
 
 class TransactionListActivity : ComponentActivity() {
 
 
     private val vm: TransactionViewModel by viewModels {
-        TransactionViewModelFactory(AppDatabase.getInstance(this))
+        TransactionViewModelFactory(AppDatabase.Companion.getInstance(this))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
