@@ -36,6 +36,7 @@ import com.example.agent.data.db.AppDatabase
 import com.example.agent.databinding.FloatingMenuLayoutBinding
 import com.example.agent.databinding.FloatingTransactionFormLayoutBinding
 import com.example.agent.model.Transaction
+import com.benjaminwan.ocrlibrary.OcrEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -311,12 +312,14 @@ class FloatingWindowService : Service() {
 
         val bitmap = createBitmap(image.width + rowPadding / pixelStride, image.height)
         bitmap.copyPixelsFromBuffer(buffer)
-
+        val ocrEngine = OcrEngine(this)
+        val ocrResult = ocrEngine.detect(bitmap, scaleUp = true,maxSideLen=1024, padding = 20, boxScoreThresh = 0.5f, boxThresh = 0.5f, unClipRatio = 1.8f, doCls = true, mostCls = false)
         // 现在你可以:
         // 1. 保存截图到文件
         // 2. 传递给OCR处理模块
         // 3. 在Toast中显示提示信息
-        Toast.makeText(this, "截图成功! 尺寸: ${bitmap.width}x${bitmap.height}", Toast.LENGTH_SHORT).show()
+        Log.d("OCR",ocrResult.text)
+//        Toast.makeText(this, "截图成功! 尺寸: ${bitmap.width}x${bitmap.height}", Toast.LENGTH_SHORT).show()
     }
 
 
