@@ -321,27 +321,76 @@ class FloatingWindowService : Service() {
         val ocrEngine = OcrEngine(this)
         val ocrResult = ocrEngine.detect(bitmap, scaleUp = true, maxSideLen = 1024, padding = 20,
             boxScoreThresh = 0.5f, boxThresh = 0.5f, unClipRatio = 1.8f, doCls = true, mostCls = false)
+        val cleanedText = ocrResult.text
+            .replace("手动记账", "")
+            .replace("OCR识别", "")
+            .trim()
+        Log.d("OCR", cleanedText)
 
-        Log.d("OCR", ocrResult.text)
+        // 收款方提取（示例文本处理后变成："支付成功 壹号教育"）
+        val payee = cleanedText.substringAfter("支付成功").trim()
 
-        // 提取收款方和金额
-        val (payee, amount) = extractPaymentInfo(ocrResult.text)
+        // 金额提取（直接匹配数字+小数点+两位数字）
+        val amount = Regex("""\d+\.\d{2}""").find(cleanedText)?.value
 
         // 打印提取结果
         Log.d("PaymentInfo", "收款方: $payee, 金额: $amount")
 
         // 可以在这里添加进一步处理逻辑，如保存到数据库等
+        showOcrForm(payee ?: "手动", amount ?: "0")
     }
 
-    private fun extractPaymentInfo(ocrText: String): Pair<String?, String?> {
-        // 正则表达式匹配收款方和金额
-        val payeePattern = Regex("支付成功\\s*(.*?)\\s*手动记账")
-        val amountPattern = Regex("手动记账\\s*(\\d+\\.\\d{2})")
+    @SuppressLint("InflateParams")
+    private fun showOcrForm(defaultPayee: String = "手动", defaultAmount: String = "0") {
+        formPopup?.dismiss()
+        val binding = FloatingTransactionFormLayoutBinding.inflate(LayoutInflater.from(this))
 
-        val payee = payeePattern.find(ocrText)?.groupValues?.get(1)?.trim()
-        val amount = amountPattern.find(ocrText)?.groupValues?.get(1)?.trim()
+        // 设置表单默认值
+        binding.etDescription.setText(defaultPayee)
+        binding.etAmount.setText(defaultAmount.replace(".00", ""))
 
-        return Pair(payee, amount)
+        formPopup = PopupWindow(
+            binding.root,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+            isOutsideTouchable = false
+            windowLayoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        }
+
+        binding.btnSave.setOnClickListener {
+            val amt: Float = binding.etAmount.text.toString().toFloatOrNull() ?: 0f
+            val desc = binding.etDescription.text.toString().ifBlank { "手动" }
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
+                val now = Date()
+                db.transactionDao().insert(
+                    Transaction(
+                        amount = amt,
+                        merchant = desc,
+                        method = "Ocr扫描",
+                        time = fmt.format(now),
+                        timeMillis = now.time
+                    )
+                )
+            }
+            formPopup?.dismiss()
+        }
+
+        binding.btnCancel.setOnClickListener {
+            formPopup?.dismiss()
+        }
+
+        val loc = IntArray(2).also { ballView.getLocationOnScreen(it) }
+        formPopup?.showAtLocation(
+            ballView,
+            Gravity.NO_GRAVITY,
+            loc[0] + dpToPx(30),
+            loc[1] + dpToPx(30)
+        )
     }
 
     @SuppressLint("InflateParams")
