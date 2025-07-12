@@ -1,4 +1,3 @@
-
 package com.example.agent.ui
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -71,7 +70,6 @@ class FloatingWindowService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForegroundService()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         val sizePx = dpToPx(30)
@@ -183,20 +181,20 @@ class FloatingWindowService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             if (it.action == "START_FOREGROUND") {
-                // 1. 先启动前台服务
-                startForegroundService()
-
-                // 2. 再处理权限数据
                 resultCode = it.getIntExtra("resultCode", 0)
                 resultData = it.getParcelableExtra("data")
+
+                // 只有有权限时才启动前台服务和设置MediaProjection
                 if (resultCode != 0 && resultData != null) {
+                    startForegroundService()
                     setupMediaProjection()
+                } else {
+                    startScreenCapture() // 只在这里请求一次权限
                 }
             }
         }
         return START_STICKY
     }
-
 
     private fun setupMediaProjection() {
         val projectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -224,8 +222,9 @@ class FloatingWindowService : Service() {
     }
 
     private fun captureSingleFrame() {
-        if (mediaProjection == null) {
+        if (resultCode == 0 || resultData == null) {
             startScreenCapture()
+            Toast.makeText(this, "请先授予屏幕截图权限", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -268,6 +267,12 @@ class FloatingWindowService : Service() {
     }
 
     private fun startForegroundService() {
+        // 先检查是否已有截图权限
+        if (resultCode == 0 || resultData == null) {
+            startScreenCapture() // 请求截图权限
+        }
+
+        // 已有权限，再启动前台服务
         val notification = Notification.Builder(this, CHANNEL_ID)
             .setContentTitle("Screen Capture Service")
             .setContentText("Capturing screen for OCR")
@@ -275,11 +280,7 @@ class FloatingWindowService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            )
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
@@ -289,7 +290,6 @@ class FloatingWindowService : Service() {
         override fun onStop() {
             super.onStop()
             stopMediaProjection()
-            stopSelf()
         }
     }
 
@@ -318,20 +318,30 @@ class FloatingWindowService : Service() {
     }
 
     private fun processCapturedBitmap(bitmap: Bitmap) {
-        // 这里可以将bitmap传递给OCR模块进行处理
-        // 例如：ocrProcessor.process(bitmap)
         val ocrEngine = OcrEngine(this)
-        val ocrResult = ocrEngine.detect(bitmap, scaleUp = true,maxSideLen=1024, padding = 20, boxScoreThresh = 0.5f, boxThresh = 0.5f, unClipRatio = 1.8f, doCls = true, mostCls = false)
-        Log.d("OCR",ocrResult.text)
-        // 示例：显示一个Toast表示截图成功
-//        Toast.makeText(this, "截图成功，尺寸: ${bitmap.width}x${bitmap.height}", Toast.LENGTH_SHORT).show()
+        val ocrResult = ocrEngine.detect(bitmap, scaleUp = true, maxSideLen = 1024, padding = 20,
+            boxScoreThresh = 0.5f, boxThresh = 0.5f, unClipRatio = 1.8f, doCls = true, mostCls = false)
 
-        // OCR处理完成后，在主线程重新显示菜单
-        handler.post {
-            if (menuPopup?.isShowing != true) {
-                toggleMenu()
-            }
-        }
+        Log.d("OCR", ocrResult.text)
+
+        // 提取收款方和金额
+        val (payee, amount) = extractPaymentInfo(ocrResult.text)
+
+        // 打印提取结果
+        Log.d("PaymentInfo", "收款方: $payee, 金额: $amount")
+
+        // 可以在这里添加进一步处理逻辑，如保存到数据库等
+    }
+
+    private fun extractPaymentInfo(ocrText: String): Pair<String?, String?> {
+        // 正则表达式匹配收款方和金额
+        val payeePattern = Regex("支付成功\\s*(.*?)\\s*手动记账")
+        val amountPattern = Regex("手动记账\\s*(\\d+\\.\\d{2})")
+
+        val payee = payeePattern.find(ocrText)?.groupValues?.get(1)?.trim()
+        val amount = amountPattern.find(ocrText)?.groupValues?.get(1)?.trim()
+
+        return Pair(payee, amount)
     }
 
     @SuppressLint("InflateParams")
@@ -384,6 +394,9 @@ class FloatingWindowService : Service() {
         formPopup?.dismiss()
         stopMediaProjection()
         if (::ballView.isInitialized) windowManager.removeView(ballView)
+        // 重置权限状态
+        resultCode = 0
+        resultData = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
