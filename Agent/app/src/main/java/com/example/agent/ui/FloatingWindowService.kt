@@ -303,6 +303,8 @@ class FloatingWindowService : Service() {
         mediaProjection?.unregisterCallback(mediaProjectionCallback)
         mediaProjection?.stop()
         mediaProjection = null
+        resultCode = 0
+        resultData = null
     }
 
     private fun imageToBitmap(image: android.media.Image): Bitmap {
@@ -325,19 +327,16 @@ class FloatingWindowService : Service() {
             .replace("手动记账", "")
             .replace("OCR识别", "")
             .trim()
-        Log.d("OCR", cleanedText)
-
+        Log.d("OCR_Result",cleanedText)
         // 收款方提取（示例文本处理后变成："支付成功 壹号教育"）
-        val payee = cleanedText.substringAfter("支付成功").trim()
+        val desc = cleanedText.substringAfter("支付成功").trim()
 
         // 金额提取（直接匹配数字+小数点+两位数字）
         val amount = Regex("""\d+\.\d{2}""").find(cleanedText)?.value
 
-        // 打印提取结果
-        Log.d("PaymentInfo", "收款方: $payee, 金额: $amount")
-
-        // 可以在这里添加进一步处理逻辑，如保存到数据库等
-        showOcrForm(payee ?: "手动", amount ?: "0")
+        // 打印提取结果方便调试
+        Log.d("PaymentInfo", "备注 $desc, 金额: $amount")
+        if(amount!=null) showOcrForm(desc ?: "手动", amount ?: "0")
     }
 
     @SuppressLint("InflateParams")
