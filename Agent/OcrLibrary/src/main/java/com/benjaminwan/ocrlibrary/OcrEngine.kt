@@ -17,6 +17,7 @@ import org.opencv.core.TickMeter
 import org.opencv.imgproc.Imgproc.*
 import java.io.Closeable
 import java.lang.Integer.max
+import androidx.core.graphics.createBitmap
 
 class OcrEngine(context: Context) : Closeable {
 
@@ -157,9 +158,7 @@ class OcrEngine(context: Context) : Closeable {
         Logger.i("---------- step: output box Mat(BGR) -> Mat(RGBA) -> Bitmap ----------")
         val outRGBA = Mat()
         cvtColor(textBoxPaddingImg.submat(paddingRect), outRGBA, COLOR_BGR2RGBA)
-        val boxImage = Bitmap.createBitmap(
-            outRGBA.cols(), outRGBA.rows(), Bitmap.Config.ARGB_8888
-        )
+        val boxImage = createBitmap(outRGBA.cols(), outRGBA.rows())
         matToBitmap(outRGBA, boxImage)
 
         /*Logger.i("---------- step: Convert partImages ----------")
