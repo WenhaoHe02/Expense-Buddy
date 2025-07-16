@@ -48,6 +48,9 @@ kapt {
 }
 
 dependencies {
+    implementation("com.airbnb.android:lottie:6.4.0")
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation(project(":OcrLibrary"))
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.15.1")
     implementation(libs.compose.runtime.livedata)
