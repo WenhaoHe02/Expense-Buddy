@@ -1,22 +1,16 @@
 package com.example.agent.ui
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.ImageReader
-import android.media.projection.MediaProjection
-import android.media.projection.MediaProjectionManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
+import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -25,8 +19,8 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.PopupWindow
 import android.widget.Toast
-import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.benjaminwan.ocrlibrary.OcrEngine
 import com.example.agent.R
 import com.example.agent.data.db.AppDatabase
@@ -39,21 +33,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 class FloatingWindowService : Service() {
     // 截图相关变量
-    private var mediaProjection: MediaProjection? = null
-    private var imageReader: ImageReader? = null
-    private var virtualDisplay: VirtualDisplay? = null
-    private var screenWidth = 0
-    private var screenHeight = 0
-    private var density = 0
-    private var resultCode = 0
-    private var resultData: Intent? = null
-    private val handler = Handler()
-    private val NOTIFICATION_ID = 1001
-    private val CHANNEL_ID = "screen_capture_channel"
-
     private lateinit var windowManager: WindowManager
     private lateinit var ballView: android.view.View
     private lateinit var params: WindowManager.LayoutParams
@@ -65,17 +48,35 @@ class FloatingWindowService : Service() {
     private var isClick = false
 
     private val db by lazy { AppDatabase.getInstance(this) }
+    private val screenshotReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            if (intent?.action == ScreenCaptureAccessibilityService.ACTION_SCREENSHOT) {
+                val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(ScreenCaptureAccessibilityService.EXTRA_BITMAP, Bitmap::class.java)
+                } else {
+                    @Suppress("DEPRECATION") intent.getParcelableExtra(ScreenCaptureAccessibilityService.EXTRA_BITMAP)
+                }
+                if (bmp != null) {
+                    processCapturedBitmap(bmp)
+                } else {
+                    Toast.makeText(this@FloatingWindowService, "截图失败", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint("ClickableViewAccessibility", "InflateParams")
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        // 注册广播
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            screenshotReceiver,
+            IntentFilter(ScreenCaptureAccessibilityService.ACTION_SCREENSHOT)
+        )
+
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         val sizePx = dpToPx(30)
-        val edgeThreshold = dpToPx(50)
-        val hidePx = dpToPx(10)
-
         params = WindowManager.LayoutParams(
             sizePx, sizePx,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -95,11 +96,6 @@ class FloatingWindowService : Service() {
             when (ev.action) {
                 MotionEvent.ACTION_DOWN -> {
                     isClick = true
-                    val screenW = resources.displayMetrics.widthPixels
-                    if (params.x < 0) params.x = 0
-                    else if (params.x > screenW - sizePx) params.x = screenW - sizePx
-                    windowManager.updateViewLayout(ballView, params)
-
                     downX = ev.rawX.toInt()
                     downY = ev.rawY.toInt()
                     lastX = params.x
@@ -109,7 +105,7 @@ class FloatingWindowService : Service() {
                 MotionEvent.ACTION_MOVE -> {
                     val dx = ev.rawX.toInt() - downX
                     val dy = ev.rawY.toInt() - downY
-                    if (isClick && (kotlin.math.abs(dx) > touchSlop || kotlin.math.abs(dy) > touchSlop)) {
+                    if (isClick && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                         isClick = false
                     }
                     if (!isClick) {
@@ -124,9 +120,12 @@ class FloatingWindowService : Service() {
                     else {
                         val screenW = resources.displayMetrics.widthPixels
                         val centerX = params.x + sizePx / 2
-                        when {
-                            centerX <= edgeThreshold -> params.x = hidePx - sizePx
-                            centerX >= screenW - edgeThreshold -> params.x = screenW - hidePx
+                        val edgeThreshold = dpToPx(50)
+                        val hidePx = dpToPx(10)
+                        params.x = when {
+                            centerX <= edgeThreshold -> hidePx - sizePx
+                            centerX >= screenW - edgeThreshold -> screenW - hidePx
+                            else -> params.x
                         }
                         windowManager.updateViewLayout(ballView, params)
                     }
@@ -135,12 +134,6 @@ class FloatingWindowService : Service() {
                 else -> false
             }
         }
-
-        // 初始化屏幕参数
-        val metrics = resources.displayMetrics
-        screenWidth = metrics.widthPixels
-        screenHeight = metrics.heightPixels
-        density = metrics.densityDpi
     }
 
     private fun toggleMenu() {
@@ -166,7 +159,7 @@ class FloatingWindowService : Service() {
         }
         binding.menuOcr.setOnClickListener {
             menuPopup?.dismiss()
-            captureSingleFrame()
+            requestScreenshot()
         }
 
         val loc = IntArray(2).also { ballView.getLocationOnScreen(it) }
@@ -177,147 +170,20 @@ class FloatingWindowService : Service() {
             loc[1] + dpToPx(30)
         )
     }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        intent?.let {
-            if (it.action == "START_FOREGROUND") {
-                resultCode = it.getIntExtra("resultCode", 0)
-                resultData = it.getParcelableExtra("data")
-
-                // 只有有权限时才启动前台服务和设置MediaProjection
-                if (resultCode != 0 && resultData != null) {
-                    startForegroundService()
-                    setupMediaProjection()
-                } else {
-                    startScreenCapture() // 只在这里请求一次权限
-                }
-            }
-        }
-        return START_STICKY
-    }
-
-    private fun setupMediaProjection() {
-        val projectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        mediaProjection = projectionManager.getMediaProjection(resultCode, resultData!!).apply {
-            registerCallback(mediaProjectionCallback, handler)
-        }
-
-        imageReader = ImageReader.newInstance(
-            screenWidth, screenHeight,
-            PixelFormat.RGBA_8888, 2
-        ).apply {
-            setOnImageAvailableListener({
-                // 这里不自动处理图像，只在需要时手动获取
-            }, handler)
-        }
-
-        virtualDisplay = mediaProjection?.createVirtualDisplay(
-            "ScreenCapture",
-            screenWidth, screenHeight, density,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader?.surface,
-            null,
-            handler
-        )
-    }
-
-    private fun captureSingleFrame() {
-        if (resultCode == 0 || resultData == null) {
-            startScreenCapture()
-            Toast.makeText(this, "请先授予屏幕截图权限", Toast.LENGTH_SHORT).show()
+    /* 通过无障碍服务截图 */
+    private fun requestScreenshot() {
+        if (!isAccessibilityServiceEnabled()) {
+            Toast.makeText(this, "请先开启无障碍权限", Toast.LENGTH_LONG).show()
+            openAccessibilitySettings()
             return
         }
-
-        imageReader?.let { reader ->
-            val image = reader.acquireLatestImage()
-            if (image != null) {
-                image.use { image ->
-                    val bitmap = imageToBitmap(image)
-                    processCapturedBitmap(bitmap)
-                }
-            } else {
-                Toast.makeText(this, "未能获取屏幕图像", Toast.LENGTH_SHORT).show()
-            }
+        // 触发无障碍服务截图
+        val intent = Intent(this, ScreenCaptureAccessibilityService::class.java).apply {
+            action = "CAPTURE"
         }
+        startService(intent)
     }
 
-    private fun startScreenCapture() {
-        if (resultCode != 0 && resultData != null) {
-            // 已经有权限，直接设置MediaProjection
-            setupMediaProjection()
-        } else {
-            // 请求截图权限
-            val intent = Intent(this, ScreenCapturePermissionActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            startActivity(intent)
-        }
-    }
-
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Screen Capture Service",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Used for screen capture functionality"
-        }
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
-    }
-
-    private fun startForegroundService() {
-        // 先检查是否已有截图权限
-        if (resultCode == 0 || resultData == null) {
-            startScreenCapture() // 请求截图权限
-        }
-
-        // 已有权限，再启动前台服务
-        val notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("Screen Capture Service")
-            .setContentText("Capturing screen for OCR")
-            .setSmallIcon(R.drawable.ic_launcher_background)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
-    }
-
-    private val mediaProjectionCallback = object : MediaProjection.Callback() {
-        override fun onStop() {
-            super.onStop()
-            stopMediaProjection()
-        }
-    }
-
-    private fun stopMediaProjection() {
-        virtualDisplay?.release()
-        virtualDisplay = null
-
-        imageReader?.close()
-        imageReader = null
-
-        mediaProjection?.unregisterCallback(mediaProjectionCallback)
-        mediaProjection?.stop()
-        mediaProjection = null
-        resultCode = 0
-        resultData = null
-    }
-
-    private fun imageToBitmap(image: android.media.Image): Bitmap {
-        val planes = image.planes
-        val buffer = planes[0].buffer
-        val pixelStride = planes[0].pixelStride
-        val rowStride = planes[0].rowStride
-        val rowPadding = rowStride - pixelStride * image.width
-
-        val bitmap = createBitmap(image.width + rowPadding / pixelStride, image.height)
-        bitmap.copyPixelsFromBuffer(buffer)
-        return bitmap
-    }
 
     private fun processCapturedBitmap(bitmap: Bitmap) {
         val ocrEngine = OcrEngine(this)
@@ -328,7 +194,7 @@ class FloatingWindowService : Service() {
             .replace("OCR识别", "")
             .trim()
         Log.d("OCR_Result",cleanedText)
-        // 收款方提取（示例文本处理后变成："支付成功 壹号教育"）
+        // 收款方提取
         val desc = cleanedText.substringAfter("支付成功").trim()
 
         // 金额提取（直接匹配数字+小数点+两位数字）
@@ -336,7 +202,7 @@ class FloatingWindowService : Service() {
 
         // 打印提取结果方便调试
         Log.d("PaymentInfo", "备注 $desc, 金额: $amount")
-        if(amount!=null) showOcrForm(desc ?: "手动", amount ?: "0")
+        if(amount!=null) showOcrForm(desc, amount)
     }
 
     @SuppressLint("InflateParams")
@@ -440,14 +306,26 @@ class FloatingWindowService : Service() {
         super.onDestroy()
         menuPopup?.dismiss()
         formPopup?.dismiss()
-        stopMediaProjection()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(screenshotReceiver)
         if (::ballView.isInitialized) windowManager.removeView(ballView)
-        // 重置权限状态
-        resultCode = 0
-        resultData = null
     }
+
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(packageName + "/" + ScreenCaptureAccessibilityService::class.java.name)
+    }
+
+    private fun openAccessibilitySettings() {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
+    }
 }

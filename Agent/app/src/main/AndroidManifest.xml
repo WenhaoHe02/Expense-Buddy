@@ -37,11 +37,18 @@
             android:foregroundServiceType="mediaProjection"
             android:exported="false" />
 
-        <activity
-            android:name=".ui.ScreenCapturePermissionActivity"
-            android:theme="@style/Theme.Transparent"
-            android:exported="false" />
-
+        <service
+            android:name=".ui.ScreenCaptureAccessibilityService"
+            android:exported="true"
+            android:label="屏幕截图助手"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
 
     </application>
 
