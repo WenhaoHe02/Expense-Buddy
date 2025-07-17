@@ -13,12 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
-# 忽略 OpenCV SDK 所有内容（如你导入了解压目录）
 OpenCV/
 opencv-*
 
 # 忽略 OpenCV 的 jar 包
-OcrLibrary/libs/opencv-*.jar
+OcrLibrary/
 
-# 忽略 jniLibs 下的 OpenCV 动态库（如果你希望全部不提交）
-OcrLibrary/src/main/jniLibs/**/*.so
