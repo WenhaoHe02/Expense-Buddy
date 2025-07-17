@@ -1,10 +1,12 @@
 package com.example.agent.ui.FloatingWindow
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.PopupWindow
+import android.widget.Toast
 import androidx.core.graphics.drawable.toDrawable
 import com.example.agent.data.db.AppDatabase
 import com.example.agent.databinding.FloatingMenuLayoutBinding
@@ -20,14 +22,14 @@ import java.util.*
 class MenuController(
     private val ctx: Context,
     private val windowMgr: WindowManager,
-    private val ocrController: OcrService  // ✅ 新增 OCR 注入
+    private val ocrController: OcrService  // ✅ 注入 OCR 控制器
 ) {
 
     private var menuPopup: PopupWindow? = null
     private var formPopup: PopupWindow? = null
     private val db by lazy { AppDatabase.getInstance(ctx) }
 
-    /** 点击 anchorView 时调用，可自动切换显/隐 */
+    /** 点击桌宠显示菜单 */
     fun toggleMenu(anchorView: View) {
         menuPopup?.let { if (it.isShowing) { it.dismiss(); return } }
 
@@ -43,19 +45,26 @@ class MenuController(
             windowLayoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         }
 
-        // ✅ 手动录入
+        // ✅ 手动录入入口
         binding.menuManualEntry.setOnClickListener {
             menuPopup?.dismiss()
             showForm(anchorView)
         }
 
-        // ✅ OCR 识别入口
+        // ✅ OCR 入口：判断是否已授权
         binding.menuOcr.setOnClickListener {
             menuPopup?.dismiss()
-            ocrController.captureAndRecognize(anchorView)
+            if (!ocrController.isInitialized()) {
+                Toast.makeText(ctx, "OCR 未授权，请先授权", Toast.LENGTH_SHORT).show()
+                val intent = Intent(ctx, ScreenCapturePermissionActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                ctx.startActivity(intent)
+            } else {
+                ocrController.captureAndRecognize(anchorView)
+            }
         }
 
-        // 显示菜单位置：锚点右下角 30dp 偏移
+        // 弹出位置：锚点右下角偏移
         val loc = IntArray(2).also { anchorView.getLocationOnScreen(it) }
         menuPopup?.showAtLocation(
             anchorView,
@@ -64,7 +73,7 @@ class MenuController(
         )
     }
 
-    /** 手动记账表单 */
+    /** 手动记账表单弹窗 */
     private fun showForm(anchorView: View) {
         formPopup?.dismiss()
         val binding = FloatingTransactionFormLayoutBinding.inflate(LayoutInflater.from(ctx))
@@ -87,6 +96,7 @@ class MenuController(
             saveTransaction(binding)
             formPopup?.dismiss()
         }
+
         binding.btnCancel.setOnClickListener { formPopup?.dismiss() }
 
         val loc = IntArray(2).also { anchorView.getLocationOnScreen(it) }
@@ -97,6 +107,7 @@ class MenuController(
         )
     }
 
+    /** 数据保存逻辑 */
     private fun saveTransaction(b: FloatingTransactionFormLayoutBinding) {
         val amount = b.etAmount.text.toString().toFloatOrNull() ?: 0f
         val merchant = b.etMerchant.text.toString().ifBlank { "" }
@@ -124,6 +135,6 @@ class MenuController(
         formPopup?.dismiss()
     }
 
-    private fun dp2px(dp: Int) =
+    private fun dp2px(dp: Int): Int =
         (dp * ctx.resources.displayMetrics.density + 0.5f).toInt()
 }

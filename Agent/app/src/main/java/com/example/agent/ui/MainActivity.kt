@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
     /** Android 8+ 必须用 startForegroundService，否则 5 秒内会被系统杀掉 */
     private fun startPetService() {
-        val intent = Intent(this, FloatingWindowService::class.java)
+        val intent = Intent(this, PetService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ContextCompat.startForegroundService(this, intent)
         } else {

@@ -70,6 +70,8 @@ class PetService : Service() {
 
         /** ③ 初始化窗口与视图 */
         wm       = getSystemService(WINDOW_SERVICE) as WindowManager
+        ocrService = OcrService(this, wm)
+        menuCtrl = MenuController(this, wm, ocrService)
 
         lp = WindowManager.LayoutParams(
             size, size,

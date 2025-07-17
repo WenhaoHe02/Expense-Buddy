@@ -45,7 +45,9 @@ class OcrService(
     private val screenWidth by lazy { context.resources.displayMetrics.widthPixels }
     private val screenHeight by lazy { context.resources.displayMetrics.heightPixels }
     private val density by lazy { context.resources.displayMetrics.densityDpi }
-
+    fun isInitialized(): Boolean {
+        return mediaProjection != null && imageReader != null
+    }
     fun setProjectionPermission(resultCode: Int, resultData: android.content.Intent?) {
         this.resultCode = resultCode
         this.resultData = resultData

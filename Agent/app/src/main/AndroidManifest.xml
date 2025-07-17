@@ -2,11 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <!-- 权限声明 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -19,7 +20,7 @@
         android:theme="@style/Theme.Agent"
         tools:targetApi="31">
 
-        <!-- ✅ 新的主入口：MainActivity -->
+        <!-- 应用主入口 -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
@@ -28,24 +29,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- 其他页面不需要 intent-filter -->
         <activity android:name=".ui.AddTransaction.AddTransactionActivity" android:exported="false" />
         <activity android:name=".ui.TransactionList.TransactionListActivity" android:exported="false" />
+
+
         <service
             android:name=".ui.FloatingWindow.FloatingWindowService"
-            android:exported="false"/>
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <service
             android:name=".ui.FloatingWindow.PetService"
             android:exported="false"
-            android:foregroundServiceType="dataSync"/>
+            android:foregroundServiceType="dataSync" />
 
 
         <activity
             android:name=".ui.FloatingWindow.ScreenCapturePermissionActivity"
-            android:theme="@style/Theme.Transparent"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.Transparent" />
 
+
+        <service
+            android:name=".ui.FloatingWindow.OcrForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
 
     </application>
 

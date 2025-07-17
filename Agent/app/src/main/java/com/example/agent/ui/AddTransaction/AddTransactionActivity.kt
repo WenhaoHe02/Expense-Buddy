@@ -43,7 +43,7 @@ class AddTransactionActivity : ComponentActivity() {
                             db.transactionDao().insert(transaction)
                             finish()
                         }
-                    } as (Float, String, String, Long) -> Unit as (Float, String, String, Classification, Long) -> Unit,
+                    } ,
                     onCancel = { finish() }
                 )
             }
