@@ -19,11 +19,13 @@ class PetService : Service() {
 
     companion object {
         /** 在任意 Context 启动桌宠（已做好前台适配） */
-        fun start(ctx: Context) {
-            val i = Intent(ctx, PetService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ctx.startForegroundService(i)
-            } else ctx.startService(i)
+        fun start(ctx: Context, resultCode: Int, resultData: Intent) {
+            val i = Intent(ctx, PetService::class.java).apply {
+                action = "START_FOREGROUND"
+                putExtra("resultCode", resultCode)
+                putExtra("resultData", resultData)
+            }
+            ctx.startForegroundService(i)
         }
     }
 
@@ -32,11 +34,27 @@ class PetService : Service() {
     private lateinit var petView: View
     private lateinit var animView: LottieAnimationView
     private lateinit var menuCtrl: MenuController
+    private lateinit var ocrService: OcrService
 
     private val size by lazy { dp(120) }
     private val slop by lazy { ViewConfiguration.get(this).scaledTouchSlop }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "START_FOREGROUND") {
+            val resultCode = intent.getIntExtra("resultCode", 0)
+            val resultData = intent.getParcelableExtra<Intent>("resultData")
+
+            ocrService = OcrService(this, wm)
+            ocrService.setProjectionPermission(resultCode, resultData)
+            ocrService.setupMediaProjection()
+
+            menuCtrl = MenuController(this, wm, ocrService)
+        }
+        return START_STICKY
+    }
+
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate() {
@@ -52,13 +70,10 @@ class PetService : Service() {
 
         /** ③ 初始化窗口与视图 */
         wm       = getSystemService(WINDOW_SERVICE) as WindowManager
-        menuCtrl = MenuController(this, wm)
 
         lp = WindowManager.LayoutParams(
             size, size,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
@@ -103,7 +118,11 @@ class PetService : Service() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (click) menuCtrl.toggleMenu(petView) else absorbEdge()
+                    if (click) {
+                        if (::menuCtrl.isInitialized) {
+                            menuCtrl.toggleMenu(petView)
+                        }
+                    } else absorbEdge()
                     true
                 }
                 else -> false
@@ -125,27 +144,27 @@ class PetService : Service() {
     }
 
     override fun onDestroy() {
-        menuCtrl.dismissAll()
+        if (::menuCtrl.isInitialized) {
+            menuCtrl.dismissAll()
+        }
         wm.removeView(petView)
         super.onDestroy()
     }
 
     /** 前台通知 helper */
     private fun startAsForeground() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val id = "pet"
-            val nm = getSystemService(NotificationManager::class.java)
-            if (nm.getNotificationChannel(id) == null) {
-                nm.createNotificationChannel(
-                    NotificationChannel(id, "Pet", NotificationManager.IMPORTANCE_MIN)
-                )
-            }
-            val notif = NotificationCompat.Builder(this, id)
-                .setContentTitle("Pet running")
-                .setSmallIcon(R.drawable.ic_pet)
-                .build()
-            startForeground(1, notif)
+        val id = "pet"
+        val nm = getSystemService(NotificationManager::class.java)
+        if (nm.getNotificationChannel(id) == null) {
+            nm.createNotificationChannel(
+                NotificationChannel(id, "Pet", NotificationManager.IMPORTANCE_MIN)
+            )
         }
+        val notif = NotificationCompat.Builder(this, id)
+            .setContentTitle("Pet running")
+            .setSmallIcon(R.drawable.ic_pet)
+            .build()
+        startForeground(1, notif)
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density + 0.5f).toInt()

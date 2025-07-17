@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.core.content.ContextCompat
 import com.example.agent.ui.AddTransaction.AddTransactionActivity
+import com.example.agent.ui.FloatingWindow.FloatingWindowService
 import com.example.agent.ui.FloatingWindow.PetService     // ← 启动桌宠这一个服务即可
 import com.example.agent.ui.TransactionList.TransactionListActivity
 import com.example.agent.util.PermissionUtils
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
     /** Android 8+ 必须用 startForegroundService，否则 5 秒内会被系统杀掉 */
     private fun startPetService() {
-        val intent = Intent(this, PetService::class.java)
+        val intent = Intent(this, FloatingWindowService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ContextCompat.startForegroundService(this, intent)
         } else {

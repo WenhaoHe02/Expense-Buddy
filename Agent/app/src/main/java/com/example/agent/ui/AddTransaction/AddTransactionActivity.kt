@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.lifecycleScope
 import com.example.agent.data.db.AppDatabase
+import com.example.agent.model.Transaction.Classification
 import com.example.agent.model.Transaction.Transaction
 import com.example.agent.viewmodel.TransactionViewModel
 import com.example.agent.viewmodel.TransactionViewModelFactory
@@ -17,7 +18,7 @@ import java.util.Locale
 
 class AddTransactionActivity : ComponentActivity() {
 
-    private val db by lazy { AppDatabase.Companion.getInstance(this) }
+    private val db by lazy { AppDatabase.getInstance(this) }
     private val vm: TransactionViewModel by viewModels {
         TransactionViewModelFactory(db)
     }
@@ -28,22 +29,22 @@ class AddTransactionActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 AddTransactionScreen(
-                    onSave = { amount, merchant, method, millis ->
+                    onSave = { amount: Float, merchant: String, note: String, classification: Classification, millis: Long ->
                         lifecycleScope.launch {
                             val timeFmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
-                            db.transactionDao().insert(
-                                Transaction(
-                                    amount = amount,
-                                    merchant = merchant,
-                                    method = method,
-                                    time = timeFmt.format(Date(millis)),
-                                    timeMillis = millis
-                                )
+                            val transaction = Transaction(
+                                amount = amount,
+                                merchant = merchant,
+                                note = note,
+                                classification = classification,
+                                time = timeFmt.format(Date(millis)),
+                                timeMillis = millis
                             )
-                            finish()           // 保存完返回
+                            db.transactionDao().insert(transaction)
+                            finish()
                         }
-                    },
-                    onCancel = { finish() }   // 顶部返回按钮
+                    } as (Float, String, String, Long) -> Unit as (Float, String, String, Classification, Long) -> Unit,
+                    onCancel = { finish() }
                 )
             }
         }
