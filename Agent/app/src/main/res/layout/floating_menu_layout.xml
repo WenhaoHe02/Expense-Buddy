@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@drawable/menu_background">
+
+    <TextView
+        android:id="@+id/menu_manual_entry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="手动记账"
+        android:textColor="#333333"
+        android:padding="8dp"/>
+    <TextView
+        android:id="@+id/menu_Ocr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OCR识别"
+        android:textSize="16sp"
+        android:padding="10dp"
+        android:textColor="#000000" />
+</LinearLayout>

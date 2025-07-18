@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/menu_background"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <EditText
+        android:id="@+id/et_amount"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="金额"
+        android:inputType="numberDecimal"/>
+    <Spinner
+        android:id="@+id/spinner_classification"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="分类"
+        android:layout_marginTop="8dp"
+        android:spinnerMode="dropdown" />
+    <EditText
+        android:id="@+id/et_merchant"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="消费场所"
+        android:inputType="text"
+        android:layout_marginTop="8dp"/>
+    <EditText
+        android:id="@+id/et_note"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:hint="备注"
+        android:inputType="text"
+        android:layout_marginTop="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="取消"
+            android:padding="6dp"/>
+
+        <TextView
+            android:id="@+id/btn_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存"
+            android:padding="6dp"
+            android:layout_marginStart="16dp"/>
+    </LinearLayout>
+</LinearLayout>
