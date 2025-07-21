@@ -1,27 +1,31 @@
 package com.example.agent.ui.FloatingWindow
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
-import android.view.*
+import android.os.Build
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.PopupWindow
-import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.drawable.toDrawable
 import com.example.agent.data.db.AppDatabase
 import com.example.agent.databinding.FloatingMenuLayoutBinding
 import com.example.agent.databinding.FloatingTransactionFormLayoutBinding
 import com.example.agent.model.Transaction.Classification
 import com.example.agent.model.Transaction.Transaction
+import com.example.agent.ui.OcrService.OcrService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class MenuController(
     private val ctx: Context,
-    private val windowMgr: WindowManager,
     private val ocrController: OcrService  // ✅ 注入 OCR 控制器
 ) {
 
@@ -30,6 +34,7 @@ class MenuController(
     private val db by lazy { AppDatabase.getInstance(ctx) }
 
     /** 点击桌宠显示菜单 */
+    @RequiresApi(Build.VERSION_CODES.R)
     fun toggleMenu(anchorView: View) {
         menuPopup?.let { if (it.isShowing) { it.dismiss(); return } }
 
@@ -54,14 +59,7 @@ class MenuController(
         // ✅ OCR 入口：判断是否已授权
         binding.menuOcr.setOnClickListener {
             menuPopup?.dismiss()
-            if (!ocrController.isInitialized()) {
-                Toast.makeText(ctx, "OCR 未授权，请先授权", Toast.LENGTH_SHORT).show()
-                val intent = Intent(ctx, ScreenCapturePermissionActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                ctx.startActivity(intent)
-            } else {
-                ocrController.captureAndRecognize(anchorView)
-            }
+            ocrController.captureAndRecognize(anchorView)
         }
 
         // 弹出位置：锚点右下角偏移
@@ -77,7 +75,7 @@ class MenuController(
     private fun showForm(anchorView: View) {
         formPopup?.dismiss()
         val binding = FloatingTransactionFormLayoutBinding.inflate(LayoutInflater.from(ctx))
-        val classifications = Classification.values().map { it.label }
+        val classifications = Classification.entries.map { it.label }
         val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, classifications)
         binding.spinnerClassification.adapter = adapter
 
@@ -112,7 +110,7 @@ class MenuController(
         val amount = b.etAmount.text.toString().toFloatOrNull() ?: 0f
         val merchant = b.etMerchant.text.toString().ifBlank { "" }
         val note = b.etNote.text.toString().ifBlank { "" }
-        val classification = Classification.values()[b.spinnerClassification.selectedItemPosition]
+        val classification = Classification.entries[b.spinnerClassification.selectedItemPosition]
 
         CoroutineScope(Dispatchers.IO).launch {
             val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)

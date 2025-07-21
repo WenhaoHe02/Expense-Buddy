@@ -1,32 +1,30 @@
 package com.example.agent.ui.FloatingWindow
 
 import android.annotation.SuppressLint
-import android.app.*
-import android.content.Context
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.WindowManager
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.example.agent.R
-import com.example.agent.ui.FloatingWindow.MenuController
+import com.example.agent.ui.OcrService.OcrService
 
 class PetService : Service() {
 
     companion object {
-        /** 在任意 Context 启动桌宠（已做好前台适配） */
-        fun start(ctx: Context, resultCode: Int, resultData: Intent) {
-            val i = Intent(ctx, PetService::class.java).apply {
-                action = "START_FOREGROUND"
-                putExtra("resultCode", resultCode)
-                putExtra("resultData", resultData)
-            }
-            ctx.startForegroundService(i)
-        }
     }
 
     private lateinit var wm: WindowManager
@@ -42,20 +40,13 @@ class PetService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "START_FOREGROUND") {
-            val resultCode = intent.getIntExtra("resultCode", 0)
-            val resultData = intent.getParcelableExtra<Intent>("resultData")
-
-            ocrService = OcrService(this, wm)
-            ocrService.setProjectionPermission(resultCode, resultData)
-            ocrService.setupMediaProjection()
-
-            menuCtrl = MenuController(this, wm, ocrService)
-        }
+        ocrService = OcrService(this)
+        menuCtrl = MenuController(this, ocrService)
         return START_STICKY
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.R)
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate() {
         super.onCreate()
@@ -70,8 +61,8 @@ class PetService : Service() {
 
         /** ③ 初始化窗口与视图 */
         wm       = getSystemService(WINDOW_SERVICE) as WindowManager
-        ocrService = OcrService(this, wm)
-        menuCtrl = MenuController(this, wm, ocrService)
+        ocrService = OcrService(this)
+        menuCtrl = MenuController(this, ocrService)
 
         lp = WindowManager.LayoutParams(
             size, size,
@@ -95,6 +86,7 @@ class PetService : Service() {
         initTouchDrag()
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     @SuppressLint("ClickableViewAccessibility")
     private fun initTouchDrag() {
         var downX = 0f; var downY = 0f

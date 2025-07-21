@@ -4,10 +4,15 @@ import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
-import android.os.Build
 import android.os.IBinder
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.WindowManager
 import com.example.agent.R
+import com.example.agent.ui.OcrService.OcrService
 import kotlin.math.abs
 
 class FloatingWindowService : Service() {
@@ -35,16 +40,8 @@ class FloatingWindowService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "START_FOREGROUND") {
-            val resultCode = intent.getIntExtra("resultCode", 0)
-            val resultData = intent.getParcelableExtra<Intent>("resultData")
-
-            ocrService = OcrService(this, windowManager)
-            ocrService.setProjectionPermission(resultCode, resultData)
-            ocrService.setupMediaProjection()
-
-            menuCtrl = MenuController(this, windowManager, ocrService)
-        }
+        ocrService = OcrService(this)
+        menuCtrl = MenuController(this, ocrService)
         return START_STICKY
     }
 
@@ -52,9 +49,7 @@ class FloatingWindowService : Service() {
     private fun setupFloatingBall() {
         params = WindowManager.LayoutParams(
             sizePx, sizePx,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT

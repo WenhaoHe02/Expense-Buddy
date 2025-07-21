@@ -2,19 +2,18 @@ package com.example.agent.ui
 
 import MainScreen
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.example.agent.ui.AddTransaction.AddTransactionActivity
-import com.example.agent.ui.FloatingWindow.FloatingWindowService
-import com.example.agent.ui.FloatingWindow.PetService     // ← 启动桌宠这一个服务即可
+import com.example.agent.ui.FloatingWindow.PetService
 import com.example.agent.ui.TransactionList.TransactionListActivity
 import com.example.agent.util.PermissionUtils
 
@@ -44,9 +43,17 @@ class MainActivity : ComponentActivity() {
         } else {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
+                "package:$packageName".toUri()
             )
             overlayLauncher.launch(intent)
+        }
+        if(!isAccessibilityServiceEnabled()){
+            Toast.makeText(
+                this,
+                "请开启无障碍权限以使用屏幕识别功能",
+                Toast.LENGTH_LONG
+            ).show()
+            openAccessibilitySetting()
         }
 
         // ② 普通界面
@@ -67,10 +74,19 @@ class MainActivity : ComponentActivity() {
     /** Android 8+ 必须用 startForegroundService，否则 5 秒内会被系统杀掉 */
     private fun startPetService() {
         val intent = Intent(this, PetService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ContextCompat.startForegroundService(this, intent)
-        } else {
-            startService(intent)
-        }
+        ContextCompat.startForegroundService(this, intent)
+    }
+    fun openAccessibilitySetting() {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        startActivity(intent)
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val am = getSystemService(ACCESSIBILITY_SERVICE) as AccessibilityManager
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        )
+        return enabledServices?.contains(packageName) == true
     }
 }
